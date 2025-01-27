@@ -63,14 +63,13 @@ int main()
 
 	// definiendo los vectores como variables compartidas. i como variable privada, dividiendo en pedazos de manera estatica en 2 hilos 
 	#pragma omp parallel for shared(vectorA, vectorB, vectorC, pedazos) private(i) schedule(static, pedazos) num_threads(2)
+	
+	for (i = 0; i < cantidad; i++)
 	{
-		for (i = 0; i < cantidad; i++)
-		{
-			vectorC[i] = vectorA[i] + vectorB[i];
-		}
-
+		vectorC[i] = vectorA[i] + vectorB[i];
 	}
 
+	
 	// Imprimiendo los primeros N valores del vector resultante
 	std::cout << "Imprimiendo los primeros " << mostrar << " valores del vector C: " << std::endl;
 	imprimerArreglo(vectorC);
