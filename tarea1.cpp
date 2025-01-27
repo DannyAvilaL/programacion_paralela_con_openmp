@@ -1,45 +1,79 @@
-// pruebaOMP.cpp : Este archivo contiene la función "main". La ejecución del programa comienza y termina ahí.
-//
-
 #include <iostream>
-
-#ifdef _OPENMP
+#include <random>
+#include <vector>
 #include <omp.h>
-#else
-#define omp_get_thread_num() 0
-#endif // _OPENMP
 
-#define N 24
-using namespace std;
-int tid;
+#define mostrar 10
+#define nHilos 2
+
+// Funcion que genera un vector de numeros aleatorios con la cantidad indicada
+std::vector<int> generarNumerosAleatorios(int cantidad)
+{
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dist(0, 100);
+
+	std::vector<int> numeros(cantidad);
+	// Generando cada numero aleatorio
+	for (int& num : numeros)
+	{
+		num = dist(gen);
+	}
+
+	return numeros;
+}
+
+
+void imprimerArreglo(std::vector<int> vector)
+{
+	// Iteracion por valor en el vector
+	for (int x = 0; x < mostrar; x++)
+	{
+		std::cout << vector[x] << " ";
+	}
+	std::cout << std::endl;
+}
+
 
 int main()
 {
-    std::cout << "Estableciendo la cantidad de Hilos!\n";
 
-    int nHilos;
+	int cantidad;
+	int pedazos;
+	int i;
 
-    cout << "Cuantos hilos quieres utilizar: ";
-    cin >> nHilos;
+	// Pidiendo la cantidad de valores a generar en aleatorio para los dos vectores a sumar
+	std::cout << "Ingresa la cantidad de valores en los vectores: ";
+	std::cin >> cantidad;
+	// Generando numeros aleatorios
+	std::vector<int> vectorA = generarNumerosAleatorios(cantidad);
+	std::vector<int> vectorB = generarNumerosAleatorios(cantidad);
 
-#ifdef _OPENMP
-    omp_set_num_threads(nHilos);
-#endif // _OPENMP
+	std::cout << "Imprimiendo los primeros " << mostrar << " valores del vector A: " << std::endl;
+	imprimerArreglo(vectorA);
+	std::cout << "Imprimiendo los primeros " << mostrar << " valores del vector B " << std::endl;
+	imprimerArreglo(vectorB);
 
-#pragma omp parallel private(tid)
-    {
-        tid = omp_get_thread_num();
-        cout << "El thread " << tid << "esta en marcha" << endl;
-        cout << "El thread " << tid << "ha terminado" << endl;
-    }
+	// Creando el vectorC con 'cantidad' de espacios
+	std::vector<int> vectorC(cantidad);
+
+	//dividiendo la cantidad de valores por hilo
+	pedazos = int(vectorA.size() / nHilos + vectorA.size() % nHilos);
+	std::cout << "Cantidad de valores en cada hilo: " << pedazos << std::endl;
+
+	// definiendo los vectores como variables compartidas. i como variable privada, dividiendo en pedazos de manera estatica en 2 hilos 
+	#pragma omp parallel for shared(vectorA, vectorB, vectorC, pedazos) private(i) schedule(static, pedazos) num_threads(2)
+	{
+		for (i = 0; i < cantidad; i++)
+		{
+			vectorC[i] = vectorA[i] + vectorB[i];
+		}
+
+	}
+
+	// Imprimiendo los primeros N valores del vector resultante
+	std::cout << "Imprimiendo los primeros " << mostrar << " valores del vector C: " << std::endl;
+	imprimerArreglo(vectorC);
+
+
 }
-
-// Ejecutar programa: Ctrl + F5 o menú Depurar > Iniciar sin depurar
-// Depurar programa: F5 o menú Depurar > Iniciar depuración
-
-// Sugerencias para primeros pasos: 1. Use la ventana del Explorador de soluciones para agregar y administrar archivos
-//   2. Use la ventana de Team Explorer para conectar con el control de código fuente
-//   3. Use la ventana de salida para ver la salida de compilación y otros mensajes
-//   4. Use la ventana Lista de errores para ver los errores
-//   5. Vaya a Proyecto > Agregar nuevo elemento para crear nuevos archivos de código, o a Proyecto > Agregar elemento existente para agregar archivos de código existentes al proyecto
-//   6. En el futuro, para volver a abrir este proyecto, vaya a Archivo > Abrir > Proyecto y seleccione el archivo .sln
